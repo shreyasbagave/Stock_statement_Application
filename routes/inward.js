@@ -55,11 +55,14 @@ router.get('/', [
       filter.item = req.query.item;
     }
 
+    // Add user filter to only show entries created by the authenticated user
+    filter.createdBy = req.user._id;
+
     const inwardEntries = await InwardStock.find(filter)
       .populate('supplier', 'name contactPerson email phone')
       .populate('item', 'name category unit')
       .populate('createdBy', 'name email')
-      .sort({ date: -1, createdAt: -1 })
+      .sort({ date: 1, createdAt: 1 })
       .skip(skip)
       .limit(limit);
 
@@ -90,7 +93,10 @@ router.get('/', [
 // @access  Private
 router.get('/:id', [protect, authorize('admin')], async (req, res) => {
   try {
-    const inwardEntry = await InwardStock.findById(req.params.id)
+    const inwardEntry = await InwardStock.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    })
       .populate('supplier', 'name contactPerson email phone address gstNumber')
       .populate('item', 'name category unit currentStock')
       .populate('createdBy', 'name email');
@@ -228,7 +234,10 @@ router.put('/:id', [
       });
     }
 
-    const inwardEntry = await InwardStock.findById(req.params.id);
+    const inwardEntry = await InwardStock.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    });
 
     if (!inwardEntry) {
       return res.status(404).json({
@@ -245,7 +254,8 @@ router.put('/:id', [
       const existingEntry = await InwardStock.findOne({
         _id: { $ne: req.params.id },
         challanNo,
-        supplier: supplierId
+        supplier: supplierId,
+        createdBy: req.user._id
       });
 
       if (existingEntry) {
@@ -311,7 +321,10 @@ router.delete('/:id', [
   authorize('admin')
 ], logActivity('INWARD_DELETE', 'InwardStock'), async (req, res) => {
   try {
-    const inwardEntry = await InwardStock.findById(req.params.id);
+    const inwardEntry = await InwardStock.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    });
 
     if (!inwardEntry) {
       return res.status(404).json({
@@ -367,7 +380,7 @@ router.get('/summary', [
     }
 
     const summary = await InwardStock.aggregate([
-      { $match: dateFilter },
+      { $match: { ...dateFilter, createdBy: req.user._id } },
       {
         $group: {
           _id: null,
@@ -381,7 +394,7 @@ router.get('/summary', [
     ]);
 
     const supplierSummary = await InwardStock.aggregate([
-      { $match: dateFilter },
+      { $match: { ...dateFilter, createdBy: req.user._id } },
       {
         $group: {
           _id: '$supplier',
@@ -412,7 +425,7 @@ router.get('/summary', [
     ]);
 
     const itemSummary = await InwardStock.aggregate([
-      { $match: dateFilter },
+      { $match: { ...dateFilter, createdBy: req.user._id } },
       {
         $group: {
           _id: '$item',

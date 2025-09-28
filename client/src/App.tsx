@@ -96,16 +96,6 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/logs"
-          element={
-            <ProtectedRoute>
-              <SidebarLayout onLogout={logout}>
-                <div style={{padding:24}}>Logs</div>
-              </SidebarLayout>
-            </ProtectedRoute>
-          }
-        />
       </Routes>
     </BrowserRouter>
   );

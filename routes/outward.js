@@ -55,11 +55,14 @@ router.get('/', [
       filter.item = req.query.item;
     }
 
+    // Add user filter to only show entries created by the authenticated user
+    filter.createdBy = req.user._id;
+
     const outwardEntries = await OutwardStock.find(filter)
       .populate('customer', 'name contactPerson email phone')
       .populate('item', 'name category unit currentStock')
       .populate('createdBy', 'name email')
-      .sort({ date: -1, createdAt: -1 })
+      .sort({ date: 1, createdAt: 1 })
       .skip(skip)
       .limit(limit);
 
@@ -90,7 +93,10 @@ router.get('/', [
 // @access  Private
 router.get('/:id', [protect, authorize('admin')], async (req, res) => {
   try {
-    const outwardEntry = await OutwardStock.findById(req.params.id)
+    const outwardEntry = await OutwardStock.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    })
       .populate('customer', 'name contactPerson email phone address gstNumber')
       .populate('item', 'name category unit currentStock')
       .populate('createdBy', 'name email');
@@ -253,7 +259,10 @@ router.put('/:id', [
       });
     }
 
-    const outwardEntry = await OutwardStock.findById(req.params.id);
+    const outwardEntry = await OutwardStock.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    });
 
     if (!outwardEntry) {
       return res.status(404).json({
@@ -270,7 +279,8 @@ router.put('/:id', [
       const existingEntry = await OutwardStock.findOne({
         _id: { $ne: req.params.id },
         challanNo,
-        customer: customerId
+        customer: customerId,
+        createdBy: req.user._id
       });
 
       if (existingEntry) {
@@ -361,7 +371,10 @@ router.delete('/:id', [
   authorize('admin')
 ], logActivity('OUTWARD_DELETE', 'OutwardStock'), async (req, res) => {
   try {
-    const outwardEntry = await OutwardStock.findById(req.params.id);
+    const outwardEntry = await OutwardStock.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    });
 
     if (!outwardEntry) {
       return res.status(404).json({
@@ -417,7 +430,7 @@ router.get('/summary', [
     }
 
     const summary = await OutwardStock.aggregate([
-      { $match: dateFilter },
+      { $match: { ...dateFilter, createdBy: req.user._id } },
       {
         $group: {
           _id: null,
@@ -435,7 +448,7 @@ router.get('/summary', [
     ]);
 
     const customerSummary = await OutwardStock.aggregate([
-      { $match: dateFilter },
+      { $match: { ...dateFilter, createdBy: req.user._id } },
       {
         $group: {
           _id: '$customer',
@@ -474,7 +487,7 @@ router.get('/summary', [
     ]);
 
     const itemSummary = await OutwardStock.aggregate([
-      { $match: dateFilter },
+      { $match: { ...dateFilter, createdBy: req.user._id } },
       {
         $group: {
           _id: '$item',

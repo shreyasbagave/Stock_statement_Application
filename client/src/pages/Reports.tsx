@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
+import { formatDate } from '../utils/dateUtils';
 
 const ReportsPage: React.FC = () => {
     const { api } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [dashboard, setDashboard] = useState<any>(null);
+    const [monthly, setMonthly] = useState<any>(null);
 
     const [month, setMonth] = useState<string>('');
     const [year, setYear] = useState<string>('');
@@ -27,8 +29,19 @@ const ReportsPage: React.FC = () => {
         (async () => {
             setLoading(true);
             try {
-                const res = await api.get<any>('/dashboard');
-                if (res.data?.success) setDashboard(res.data.data); else setError('Failed to load dashboard');
+                const res = await api.get<any>('/dashboard/overview');
+                if (res.data?.success) {
+                    const d = res.data.data;
+                    const mapped = {
+                        inwardMonthlyTotal: d?.inward?.totalQuantity ?? 0,
+                        outwardMonthlyTotal: d?.outward?.totalQuantity ?? 0,
+                        rejectSummary: d?.crMrSummary?.totalRejects ?? 0,
+                        currentStockBalance: d?.currentStock?.totalStock ?? 0,
+                    };
+                    setDashboard(mapped);
+                } else {
+                    setError('Failed to load dashboard');
+                }
             } catch (e: any) {
                 setError(e?.message || 'Failed to load dashboard');
             } finally { setLoading(false); }
@@ -49,6 +62,24 @@ const ReportsPage: React.FC = () => {
         } catch (e: any) { alert(e?.message || 'Export failed'); }
     };
 
+    const loadMonthly = async () => {
+        if (!month || !year) { alert('Please select month and year'); return; }
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await api.get<any>(`/reports/monthly?month=${encodeURIComponent(month)}&year=${encodeURIComponent(year)}&includeDetails=true`);
+            if (res.data?.success) {
+                setMonthly(res.data.data);
+            } else {
+                setError('Failed to load monthly report');
+            }
+        } catch (e: any) {
+            setError(e?.message || 'Failed to load monthly report');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const exportPdf = async () => {
         if (!month || !year) { alert('Please select month and year'); return; }
         try {
@@ -64,42 +95,122 @@ const ReportsPage: React.FC = () => {
     };
 
     return (
-        <div style={{ padding: 24 }}>
+        <div className="mobile-padding" style={{ padding: 24 }}>
             <h2>Reports</h2>
             {loading ? <div>Loading...</div> : error ? <div style={{ color: '#d33' }}>{error}</div> : (
                 <div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
-                        <select value={month} onChange={e => setMonth(e.target.value)} style={{ minWidth: 160 }}>
+                    <div className="filter-bar">
+                        <select value={month} onChange={e => setMonth(e.target.value)}>
                             <option value="">Select Month</option>
                             {monthOptions.map(m => <option key={m.v} value={m.v}>{m.l}</option>)}
                         </select>
-                        <select value={year} onChange={e => setYear(e.target.value)} style={{ minWidth: 120 }}>
+                        <select value={year} onChange={e => setYear(e.target.value)}>
                             <option value="">Select Year</option>
                             {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
                         </select>
+                        <button onClick={loadMonthly}>Load Logs</button>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
-                    <div style={{ padding: 16, border: '1px solid #eee', borderRadius: 8 }}>
-                        <div style={{ fontSize: 12, color: '#666' }}>Total Inward Qty (monthly)</div>
-                        <div style={{ fontSize: 24, fontWeight: 600 }}>{dashboard?.inwardMonthlyTotal ?? '-'}</div>
-                    </div>
-                    <div style={{ padding: 16, border: '1px solid #eee', borderRadius: 8 }}>
-                        <div style={{ fontSize: 12, color: '#666' }}>Total Outward Qty (monthly)</div>
-                        <div style={{ fontSize: 24, fontWeight: 600 }}>{dashboard?.outwardMonthlyTotal ?? '-'}</div>
-                    </div>
-                    <div style={{ padding: 16, border: '1px solid #eee', borderRadius: 8 }}>
-                        <div style={{ fontSize: 12, color: '#666' }}>CR & MR summary</div>
-                        <div style={{ fontSize: 24, fontWeight: 600 }}>{dashboard?.rejectSummary ?? '-'}</div>
-                    </div>
-                    <div style={{ padding: 16, border: '1px solid #eee', borderRadius: 8 }}>
-                        <div style={{ fontSize: 12, color: '#666' }}>Current Stock Balance</div>
-                        <div style={{ fontSize: 24, fontWeight: 600 }}>{dashboard?.currentStockBalance ?? '-'}</div>
-                    </div>
+                    <div className="card-grid">
+                        <div style={{ padding: 16, border: '1px solid #eee', borderRadius: 8, background: '#fff' }}>
+                            <div style={{ fontSize: 12, color: '#666' }}>Total Inward Qty (monthly)</div>
+                            <div style={{ fontSize: 24, fontWeight: 600 }}>{dashboard?.inwardMonthlyTotal ?? '-'}</div>
+                        </div>
+                        <div style={{ padding: 16, border: '1px solid #eee', borderRadius: 8, background: '#fff' }}>
+                            <div style={{ fontSize: 12, color: '#666' }}>Total Outward Qty (monthly)</div>
+                            <div style={{ fontSize: 24, fontWeight: 600 }}>{dashboard?.outwardMonthlyTotal ?? '-'}</div>
+                        </div>
+                        <div style={{ padding: 16, border: '1px solid #eee', borderRadius: 8, background: '#fff' }}>
+                            <div style={{ fontSize: 12, color: '#666' }}>CR & MR summary</div>
+                            <div style={{ fontSize: 24, fontWeight: 600 }}>{dashboard?.rejectSummary ?? '-'}</div>
+                        </div>
+                        <div style={{ padding: 16, border: '1px solid #eee', borderRadius: 8, background: '#fff' }}>
+                            <div style={{ fontSize: 12, color: '#666' }}>Current Stock Balance</div>
+                            <div style={{ fontSize: 24, fontWeight: 600 }}>{dashboard?.currentStockBalance ?? '-'}</div>
+                        </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                         <button onClick={exportExcel}>Export Excel</button>
                         <button onClick={exportPdf}>Export PDF</button>
                     </div>
+
+                    {/* Logs Section */}
+                    {monthly && (
+                        <div style={{ marginTop: 24 }}>
+                            <h3 style={{ margin: '8px 0' }}>Stock Statement Logs ({monthly?.period?.monthName} {monthly?.period?.year})</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+                                <style>{`
+                                    @media (min-width: 768px) {
+                                        .logs-grid { grid-template-columns: 1fr 1fr !important; }
+                                    }
+                                `}</style>
+                                <div className="logs-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+                                    {/* Inward Table */}
+                                    <div>
+                                        <div style={{ fontWeight: 600, marginBottom: 8 }}>Inward</div>
+                                        <div style={{ overflow: 'auto', border: '1px solid #eee', borderRadius: 6 }}>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                                <thead>
+                                                    <tr style={{ background: '#fafafa' }}>
+                                                        <th style={{ textAlign: 'left', padding: 8, borderBottom: '1px solid #eee' }}>Date</th>
+                                                        <th style={{ textAlign: 'left', padding: 8, borderBottom: '1px solid #eee' }}>Ch.No</th>
+                                                        <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #eee' }}>Qty</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {(monthly?.detailedInward || []).map((row: any, idx: number) => (
+                                                        <tr key={idx}>
+                                                            <td style={{ padding: 8, borderBottom: '1px solid #f0f0f0' }}>{formatDate(row.date)}</td>
+                                                            <td style={{ padding: 8, borderBottom: '1px solid #f0f0f0' }}>{row.challanNo}</td>
+                                                            <td style={{ padding: 8, borderBottom: '1px solid #f0f0f0', textAlign: 'right' }}>{row.quantityReceived}</td>
+                                                        </tr>
+                                                    ))}
+                                                    {(!monthly?.detailedInward || monthly.detailedInward.length === 0) && (
+                                                        <tr><td colSpan={3} style={{ padding: 12, textAlign: 'center', color: '#888' }}>No inward entries</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {/* Outward Table */}
+                                    <div>
+                                        <div style={{ fontWeight: 600, marginBottom: 8 }}>Outward</div>
+                                        <div style={{ overflow: 'auto', border: '1px solid #eee', borderRadius: 6 }}>
+                                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                                <thead>
+                                                    <tr style={{ background: '#fafafa' }}>
+                                                        <th style={{ textAlign: 'left', padding: 8, borderBottom: '1px solid #eee' }}>Date</th>
+                                                        <th style={{ textAlign: 'left', padding: 8, borderBottom: '1px solid #eee' }}>Ch.No</th>
+                                                        <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #eee' }}>OK Qty</th>
+                                                        <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #eee' }}>CR</th>
+                                                        <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #eee' }}>MR</th>
+                                                        <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #eee' }}>As Cast</th>
+                                                        <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #eee' }}>Total</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {(monthly?.detailedOutward || []).map((row: any, idx: number) => (
+                                                        <tr key={idx}>
+                                                            <td style={{ padding: 8, borderBottom: '1px solid #f0f0f0' }}>{formatDate(row.date)}</td>
+                                                            <td style={{ padding: 8, borderBottom: '1px solid #f0f0f0' }}>{row.challanNo}</td>
+                                                            <td style={{ padding: 8, borderBottom: '1px solid #f0f0f0', textAlign: 'right' }}>{row.okQty}</td>
+                                                            <td style={{ padding: 8, borderBottom: '1px solid #f0f0f0', textAlign: 'right' }}>{row.crQty}</td>
+                                                            <td style={{ padding: 8, borderBottom: '1px solid #f0f0f0', textAlign: 'right' }}>{row.mrQty}</td>
+                                                            <td style={{ padding: 8, borderBottom: '1px solid #f0f0f0', textAlign: 'right' }}>{row.asCastQty}</td>
+                                                            <td style={{ padding: 8, borderBottom: '1px solid #f0f0f0', textAlign: 'right' }}>{row.totalQty}</td>
+                                                        </tr>
+                                                    ))}
+                                                    {(!monthly?.detailedOutward || monthly.detailedOutward.length === 0) && (
+                                                        <tr><td colSpan={7} style={{ padding: 12, textAlign: 'center', color: '#888' }}>No outward entries</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 

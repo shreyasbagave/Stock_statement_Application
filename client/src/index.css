@@ -29,6 +29,145 @@ body {
   .sidebar-left { display: block !important; }
 }
 
+/* Responsive grid utilities */
+.responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16;
+}
+
+@media (max-width: 768px) {
+  .responsive-grid {
+    grid-template-columns: 1fr;
+    gap: 12;
+  }
+}
+
+/* Responsive table */
+.responsive-table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow-x: auto;
+  display: block;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .responsive-table {
+    display: table;
+    white-space: normal;
+  }
+}
+
+/* Responsive form */
+.responsive-form {
+  display: grid;
+  gap: 12;
+}
+
+.responsive-form .form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12;
+}
+
+@media (min-width: 768px) {
+  .responsive-form .form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Responsive filter bar */
+.filter-bar {
+  display: flex;
+  gap: 8;
+  margin-bottom: 12;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-bar input,
+.filter-bar select {
+  min-width: 120px;
+  flex: 1;
+}
+
+@media (max-width: 768px) {
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-bar input,
+  .filter-bar select {
+    min-width: auto;
+  }
+}
+
+/* Responsive cards */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16;
+}
+
+@media (max-width: 768px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Responsive modal */
+.modal-content {
+  width: min(100% - 24px, 480px);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    width: calc(100% - 16px);
+    margin: 8px;
+  }
+}
+
+/* Responsive pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .pagination {
+    position: static;
+    background: transparent;
+    box-shadow: none;
+    padding: 8px 0;
+  }
+}
+
+/* Responsive text */
+@media (max-width: 768px) {
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+  h3 { font-size: 1.1rem; }
+}
+
+/* Responsive spacing */
+@media (max-width: 768px) {
+  .mobile-padding {
+    padding: 16px;
+  }
+  
+  .mobile-margin {
+    margin: 8px;
+  }
+}
+
 input, select, textarea, button {
   padding: 8px;
   border: 1px solid #ddd;

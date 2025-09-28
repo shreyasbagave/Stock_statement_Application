@@ -39,11 +39,6 @@ const Icon = {
             <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zM3 9h2V7H3v2zm4 8h14v-2H7v2zm0-4h14v-2H7v2zm0-6v2h14V7H7z"/>
         </svg>
     ),
-    Logs: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M3 3h18v2H3V3zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/>
-        </svg>
-    )
 };
 
 const navItems: Array<NavItem> = [
@@ -54,7 +49,6 @@ const navItems: Array<NavItem> = [
     { path: '/inward', label: 'Inward', icon: Icon.Inward },
     { path: '/outward', label: 'Outward', icon: Icon.Outward },
     { path: '/reports', label: 'Reports', icon: Icon.Reports },
-    { path: '/logs', label: 'Logs', icon: Icon.Logs },
 ];
 
 const SidebarLayout: React.FC<{ children: React.ReactNode; onLogout?: () => void }>
@@ -72,7 +66,7 @@ const SidebarLayout: React.FC<{ children: React.ReactNode; onLogout?: () => void
     const [savingPwd, setSavingPwd] = useState(false);
 
     useEffect(() => {
-        const onResize = () => setIsMobile(window.innerWidth < 900);
+        const onResize = () => setIsMobile(window.innerWidth < 768);
         onResize();
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
@@ -163,7 +157,7 @@ const SidebarLayout: React.FC<{ children: React.ReactNode; onLogout?: () => void
                 {isMobile && mobileOpen && (
                     <div onClick={() => setMobileOpen(false)} style={{ position: 'fixed', inset: 0, top: 56, background: 'rgba(0,0,0,.35)', zIndex: 40 }} />
                 )}
-                <main style={{ padding: 16, overflow: 'auto', background: 'var(--content-bg)' }}>{children}</main>
+                <main style={{ padding: 16, overflow: 'auto', background: 'var(--content-bg)', minHeight: 'calc(100vh - 56px)' }}>{children}</main>
             </div>
         </div>
         {pwdOpen && (

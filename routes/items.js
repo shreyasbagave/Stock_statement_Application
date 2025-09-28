@@ -49,6 +49,9 @@ router.get('/', [
       filter.isActive = req.query.isActive === 'true';
     }
 
+    // Add user filter to only show items created by the authenticated user
+    filter.createdBy = req.user._id;
+
     const items = await Item.find(filter)
       .populate('createdBy', 'name email')
       .sort({ createdAt: -1 })
@@ -82,7 +85,10 @@ router.get('/', [
 // @access  Private
 router.get('/:id', [protect, authorize('admin')], async (req, res) => {
   try {
-    const item = await Item.findById(req.params.id)
+    const item = await Item.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    })
       .populate('createdBy', 'name email');
 
     if (!item) {
@@ -178,7 +184,10 @@ router.put('/:id', [
       });
     }
 
-    const item = await Item.findById(req.params.id);
+    const item = await Item.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    });
 
     if (!item) {
       return res.status(404).json({
@@ -223,7 +232,10 @@ router.delete('/:id', [
   authorize('admin')
 ], logActivity('ITEM_DELETE', 'Item'), async (req, res) => {
   try {
-    const item = await Item.findById(req.params.id);
+    const item = await Item.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    });
 
     if (!item) {
       return res.status(404).json({

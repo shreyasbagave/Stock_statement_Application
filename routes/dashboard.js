@@ -38,7 +38,8 @@ router.get('/overview', [
     const inwardSummary = await InwardStock.aggregate([
       {
         $match: {
-          date: { $gte: startDate, $lte: endDate }
+          date: { $gte: startDate, $lte: endDate },
+          createdBy: req.user._id
         }
       },
       {
@@ -55,7 +56,8 @@ router.get('/overview', [
     const outwardSummary = await OutwardStock.aggregate([
       {
         $match: {
-          date: { $gte: startDate, $lte: endDate }
+          date: { $gte: startDate, $lte: endDate },
+          createdBy: req.user._id
         }
       },
       {
@@ -98,6 +100,7 @@ router.get('/overview', [
       {
         $match: {
           date: { $gte: startDate, $lte: endDate },
+          createdBy: req.user._id,
           $or: [
             { crQty: { $gt: 0 } },
             { mrQty: { $gt: 0 } }
@@ -119,7 +122,8 @@ router.get('/overview', [
     const topInwardItems = await InwardStock.aggregate([
       {
         $match: {
-          date: { $gte: startDate, $lte: endDate }
+          date: { $gte: startDate, $lte: endDate },
+          createdBy: req.user._id
         }
       },
       {
@@ -154,7 +158,8 @@ router.get('/overview', [
     const topOutwardItems = await OutwardStock.aggregate([
       {
         $match: {
-          date: { $gte: startDate, $lte: endDate }
+          date: { $gte: startDate, $lte: endDate },
+          createdBy: req.user._id
         }
       },
       {
@@ -202,7 +207,8 @@ router.get('/overview', [
         InwardStock.aggregate([
           {
             $match: {
-              date: { $gte: trendStartDate, $lte: trendEndDate }
+              date: { $gte: trendStartDate, $lte: trendEndDate },
+              createdBy: req.user._id
             }
           },
           {
@@ -216,7 +222,8 @@ router.get('/overview', [
         OutwardStock.aggregate([
           {
             $match: {
-              date: { $gte: trendStartDate, $lte: trendEndDate }
+              date: { $gte: trendStartDate, $lte: trendEndDate },
+              createdBy: req.user._id
             }
           },
           {
@@ -328,6 +335,7 @@ router.get('/alerts/rejects', [protect, authorize('admin')], async (req, res) =>
       {
         $match: {
           date: { $gte: thirtyDaysAgo },
+          createdBy: req.user._id,
           $or: [
             { crQty: { $gt: 0 } },
             { mrQty: { $gt: 0 } }
@@ -406,7 +414,7 @@ router.get('/activities', [
     
     const activities = await ActivityLog.find()
       .populate('user', 'name email')
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .limit(limit)
       .select('action entity description createdAt');
 

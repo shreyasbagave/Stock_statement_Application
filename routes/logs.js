@@ -1,5 +1,5 @@
 const express = require('express');
-const { query, validationResult } = require('express-validator');
+const { query, validationResult, body } = require('express-validator');
 const ActivityLog = require('../models/ActivityLog');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -60,7 +60,7 @@ router.get('/', [
 
     const logs = await ActivityLog.find(filter)
       .populate('user', 'name email')
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .skip(skip)
       .limit(limit)
       .select('action entity entityId description ipAddress userAgent metadata createdAt user');
@@ -284,7 +284,7 @@ router.get('/user/:userId', [
 
     // Get user activity logs
     const userLogs = await ActivityLog.find(dateFilter)
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .limit(limit)
       .select('action entity entityId description ipAddress userAgent createdAt');
 
@@ -347,6 +347,87 @@ router.get('/user/:userId', [
     });
   } catch (error) {
     console.error('Get user activity error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Delete activity log
+// @route   DELETE /api/logs/:id
+// @access  Private
+router.delete('/:id', [
+  protect,
+  authorize('admin')
+], async (req, res) => {
+  try {
+    const log = await ActivityLog.findById(req.params.id);
+
+    if (!log) {
+      return res.status(404).json({
+        success: false,
+        message: 'Activity log not found'
+      });
+    }
+
+    await ActivityLog.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Activity log deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete activity log error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Update activity log
+// @route   PUT /api/logs/:id
+// @access  Private
+router.put('/:id', [
+  protect,
+  authorize('admin'),
+  body('description').optional().isString().isLength({ min: 1, max: 500 }).withMessage('Description must be between 1 and 500 characters'),
+  body('action').optional().isString().withMessage('Action must be a string'),
+  body('entity').optional().isString().withMessage('Entity must be a string')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    const log = await ActivityLog.findById(req.params.id);
+
+    if (!log) {
+      return res.status(404).json({
+        success: false,
+        message: 'Activity log not found'
+      });
+    }
+
+    const updatedLog = await ActivityLog.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    ).populate('user', 'name email');
+
+    res.status(200).json({
+      success: true,
+      message: 'Activity log updated successfully',
+      data: updatedLog
+    });
+  } catch (error) {
+    console.error('Update activity log error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'

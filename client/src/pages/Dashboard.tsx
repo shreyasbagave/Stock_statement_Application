@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
+import { formatDateTime } from '../utils/dateUtils';
 
 type DashboardData = {
     totals?: Record<string, number>;
@@ -33,11 +34,11 @@ const Dashboard: React.FC = () => {
     if (error) return <div style={{ padding: 24, color: '#d33' }}>{error}</div>;
 
     return (
-        <div style={{ padding: 24 }}>
+        <div className="mobile-padding" style={{ padding: 24 }}>
             <h2>Welcome{user ? `, ${user.name}` : ''}</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16, marginTop: 16 }}>
+            <div className="card-grid" style={{ marginTop: 16 }}>
                 {data?.totals && Object.entries(data.totals).map(([key, value]) => (
-                    <div key={key} style={{ padding: 16, border: '1px solid #eee', borderRadius: 8 }}>
+                    <div key={key} style={{ padding: 16, border: '1px solid #eee', borderRadius: 8, background: '#fff' }}>
                         <div style={{ fontSize: 12, color: '#666', textTransform: 'uppercase' }}>{key}</div>
                         <div style={{ fontSize: 24, fontWeight: 600 }}>{value}</div>
                     </div>
@@ -45,11 +46,15 @@ const Dashboard: React.FC = () => {
             </div>
             <div style={{ marginTop: 24 }}>
                 <h3>Recent Activity</h3>
-                <ul>
-                    {data?.recentActivities?.map((a, idx) => (
-                        <li key={idx}>{a.action} {a.entityType ? `on ${a.entityType}` : ''} {a.createdAt ? `at ${new Date(a.createdAt).toLocaleString()}` : ''}</li>
-                    )) || <li>No recent activity</li>}
-                </ul>
+                <div style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: 16 }}>
+                    <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                        {data?.recentActivities?.map((a, idx) => (
+                            <li key={idx} style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+                                {a.action} {a.entityType ? `on ${a.entityType}` : ''} {a.createdAt ? `at ${formatDateTime(a.createdAt)}` : ''}
+                            </li>
+                        )) || <li style={{ padding: '8px 0', color: '#666' }}>No recent activity</li>}
+                    </ul>
+                </div>
             </div>
         </div>
     );

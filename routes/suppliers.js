@@ -47,6 +47,9 @@ router.get('/', [
       filter.isActive = req.query.isActive === 'true';
     }
 
+    // Add user filter to only show suppliers created by the authenticated user
+    filter.createdBy = req.user._id;
+
     const suppliers = await Supplier.find(filter)
       .populate('createdBy', 'name email')
       .sort({ createdAt: -1 })
@@ -80,7 +83,10 @@ router.get('/', [
 // @access  Private
 router.get('/:id', [protect, authorize('admin')], async (req, res) => {
   try {
-    const supplier = await Supplier.findById(req.params.id)
+    const supplier = await Supplier.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    })
       .populate('createdBy', 'name email');
 
     if (!supplier) {
@@ -178,7 +184,10 @@ router.put('/:id', [
       });
     }
 
-    const supplier = await Supplier.findById(req.params.id);
+    const supplier = await Supplier.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    });
 
     if (!supplier) {
       return res.status(404).json({
@@ -223,7 +232,10 @@ router.delete('/:id', [
   authorize('admin')
 ], logActivity('SUPPLIER_DELETE', 'Supplier'), async (req, res) => {
   try {
-    const supplier = await Supplier.findById(req.params.id);
+    const supplier = await Supplier.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    });
 
     if (!supplier) {
       return res.status(404).json({

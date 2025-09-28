@@ -13,8 +13,8 @@ type AuthContextValue = {
     user: User | null;
     token: string | null;
     isAuthenticated: boolean;
-    login: (email: string, password: string) => Promise<void>;
-    register: (name: string, email: string, password: string) => Promise<void>;
+    login: (username: string, password: string) => Promise<void>;
+    register: (username: string, email: string, password: string) => Promise<void>;
     logout: () => void;
     api: ApiClient;
 };
@@ -42,8 +42,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (user) localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user)); else localStorage.removeItem(USER_STORAGE_KEY);
     }, [user]);
 
-    const login = useCallback(async (email: string, password: string) => {
-        const res = await api.post<LoginResponse>('/auth/login', { email, password });
+    const login = useCallback(async (username: string, password: string) => {
+        const res = await api.post<LoginResponse>('/auth/login', { username, password });
         if (res.data?.success && res.data.data?.token && res.data.data.user) {
             setToken(res.data.data.token);
             setUser(res.data.data.user);
@@ -52,8 +52,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error(res.data?.message || 'Login failed');
     }, [api]);
 
-    const register = useCallback(async (name: string, email: string, password: string) => {
-        const res = await api.post<LoginResponse>('/auth/register', { name, email, password });
+    const register = useCallback(async (username: string, email: string, password: string) => {
+        const res = await api.post<LoginResponse>('/auth/register', { username, email, password });
         if (res.data?.success && res.data.data?.token && res.data.data.user) {
             setToken(res.data.data.token);
             setUser(res.data.data.user);

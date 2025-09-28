@@ -47,6 +47,9 @@ router.get('/', [
       filter.isActive = req.query.isActive === 'true';
     }
 
+    // Add user filter to only show customers created by the authenticated user
+    filter.createdBy = req.user._id;
+
     const customers = await Customer.find(filter)
       .populate('createdBy', 'name email')
       .sort({ createdAt: -1 })
@@ -80,7 +83,10 @@ router.get('/', [
 // @access  Private
 router.get('/:id', [protect, authorize('admin')], async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id)
+    const customer = await Customer.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    })
       .populate('createdBy', 'name email');
 
     if (!customer) {
@@ -178,7 +184,10 @@ router.put('/:id', [
       });
     }
 
-    const customer = await Customer.findById(req.params.id);
+    const customer = await Customer.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    });
 
     if (!customer) {
       return res.status(404).json({
@@ -223,7 +232,10 @@ router.delete('/:id', [
   authorize('admin')
 ], logActivity('CUSTOMER_DELETE', 'Customer'), async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id);
+    const customer = await Customer.findOne({
+      _id: req.params.id,
+      createdBy: req.user._id
+    });
 
     if (!customer) {
       return res.status(404).json({

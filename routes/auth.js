@@ -17,7 +17,7 @@ const generateToken = (id) => {
 // @route   POST /api/auth/login
 // @access  Public
 router.post('/login', [
-  body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
+  body('username').notEmpty().trim().withMessage('Username is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ], async (req, res) => {
   try {
@@ -30,15 +30,20 @@ router.post('/login', [
       });
     }
 
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    // Check for user
-    const user = await User.findOne({ email }).select('+password');
+    // Check for user by username or email
+    const user = await User.findOne({ 
+      $or: [
+        { name: username },
+        { email: username }
+      ]
+    }).select('+password');
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Username or password is wrong'
       });
     }
 
@@ -67,7 +72,7 @@ router.post('/login', [
       
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Username or password is wrong'
       });
     }
 
@@ -115,7 +120,7 @@ router.post('/login', [
 // @route   POST /api/auth/register
 // @access  Public (you may want to restrict in production)
 router.post('/register', [
-  body('name').notEmpty().trim().withMessage('Name is required'),
+  body('username').notEmpty().trim().withMessage('Username is required'),
   body('email').isEmail().normalizeEmail().withMessage('Please provide a valid email'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ], async (req, res) => {
@@ -129,17 +134,23 @@ router.post('/register', [
       });
     }
 
-    const { name, email, password } = req.body;
+    const { username, email, password } = req.body;
 
-    const existing = await User.findOne({ email });
+    // Check if username or email already exists
+    const existing = await User.findOne({ 
+      $or: [
+        { name: username },
+        { email: email }
+      ]
+    });
     if (existing) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists with this email'
+        message: 'User already exists with this username or email'
       });
     }
 
-    const user = await User.create({ name, email, password, role: 'admin' });
+    const user = await User.create({ name: username, email, password, role: 'admin' });
 
     const token = generateToken(user._id);
 

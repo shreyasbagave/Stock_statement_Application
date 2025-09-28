@@ -116,9 +116,9 @@ const ItemsPage: React.FC = () => {
     };
 
     return (
-        <div style={{ padding: 24 }}>
+        <div className="mobile-padding" style={{ padding: 24 }}>
             <h2>Items</h2>
-            <div className="filter-bar" style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+            <div className="filter-bar">
                 <input placeholder="Search" value={search} onChange={e => { setPage(1); setSearch(e.target.value); }} />
                 <input placeholder="Category" value={category} onChange={e => { setPage(1); setCategory(e.target.value); }} />
                 <button onClick={openCreate} style={{ marginLeft: 'auto' }}>Add Item</button>
@@ -128,38 +128,38 @@ const ItemsPage: React.FC = () => {
             ) : error ? (
                 <div style={{ color: '#d33' }}>{error}</div>
             ) : (
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <div style={{ overflowX: 'auto', background: '#fff', border: '1px solid #eee', borderRadius: 8 }}>
+                    <table className="responsive-table">
                         <thead>
                             <tr>
-                                <th style={{ textAlign: 'left', borderBottom: '1px solid #eee', padding: 8 }}>Name</th>
-                                <th style={{ textAlign: 'left', borderBottom: '1px solid #eee', padding: 8 }}>Category</th>
-                                    
-                                <th style={{ textAlign: 'right', borderBottom: '1px solid #eee', padding: 8 }}>Min Stock</th>
-                                <th style={{ textAlign: 'right', borderBottom: '1px solid #eee', padding: 8 }}>Current</th>
-                                <th style={{ borderBottom: '1px solid #eee', padding: 8 }}>Actions</th>
+                                <th style={{ textAlign: 'left', borderBottom: '1px solid #eee', padding: 12 }}>Name</th>
+                                <th style={{ textAlign: 'left', borderBottom: '1px solid #eee', padding: 12 }}>Category</th>
+                                <th style={{ textAlign: 'right', borderBottom: '1px solid #eee', padding: 12 }}>Min Stock</th>
+                                <th style={{ textAlign: 'right', borderBottom: '1px solid #eee', padding: 12 }}>Current</th>
+                                <th style={{ borderBottom: '1px solid #eee', padding: 12 }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {items.map(it => (
                                 <tr key={it._id}>
-                                    <td style={{ padding: 8 }}>{it.name}</td>
-                                    <td style={{ padding: 8 }}>{it.category}</td>
-                                    
-                                    <td style={{ padding: 8, textAlign: 'right' }}>{it.minimumStock ?? '-'}</td>
-                                    <td style={{ padding: 8, textAlign: 'right' }}>{it.currentStock ?? '-'}</td>
-                                    <td style={{ padding: 8 }}>
-                                        <button onClick={() => openEdit(it)} style={{ marginRight: 8 }}>Edit</button>
-                                        <button onClick={() => remove(it._id)}>Delete</button>
+                                    <td style={{ padding: 12 }}>{it.name}</td>
+                                    <td style={{ padding: 12 }}>{it.category}</td>
+                                    <td style={{ padding: 12, textAlign: 'right' }}>{it.minimumStock ?? '-'}</td>
+                                    <td style={{ padding: 12, textAlign: 'right' }}>{it.currentStock ?? '-'}</td>
+                                    <td style={{ padding: 12 }}>
+                                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                            <button onClick={() => openEdit(it)} style={{ fontSize: '12px', padding: '4px 8px' }}>Edit</button>
+                                            <button onClick={() => remove(it._id)} style={{ fontSize: '12px', padding: '4px 8px' }}>Delete</button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
                             {items.length === 0 && (
-                                <tr><td colSpan={6} style={{ padding: 12, textAlign: 'center' }}>No items</td></tr>
+                                <tr><td colSpan={5} style={{ padding: 12, textAlign: 'center' }}>No items</td></tr>
                             )}
                         </tbody>
                     </table>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8, position: 'fixed', right: 16, bottom: 16, background: '#fff', padding: 8, borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,.08)' }}>
+                    <div className="pagination">
                         <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Prev</button>
                         <span>Page {page} of {Math.max(1, Math.ceil(total / limit))}</span>
                         <button disabled={page >= Math.ceil(total / limit)} onClick={() => setPage(p => p + 1)}>Next</button>
@@ -168,29 +168,27 @@ const ItemsPage: React.FC = () => {
             )}
 
             {formOpen && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ background: '#fff', padding: 16, borderRadius: 8, width: 'min(100% - 24px, 480px)' }}>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                    <div className="modal-content" style={{ background: '#fff', padding: 16, borderRadius: 8 }}>
                         <h3 style={{ marginBottom: 12 }}>{editItem ? 'Edit Item' : 'Add Item'}</h3>
-                        <form onSubmit={submit}>
-                            <div style={{ marginBottom: 8 }}>
+                        <form onSubmit={submit} className="responsive-form">
+                            <div>
                                 <label>Name</label>
                                 <input value={name} onChange={e => setName(e.target.value)} required style={{ width: '100%' }} />
                             </div>
-                            <div style={{ marginBottom: 8 }}>
+                            <div>
                                 <label>Description</label>
                                 <input value={desc} onChange={e => setDesc(e.target.value)} style={{ width: '100%' }} />
                             </div>
-                            <div style={{ marginBottom: 8 }}>
+                            <div>
                                 <label>Category</label>
                                 <input value={cat} onChange={e => setCat(e.target.value)} required style={{ width: '100%' }} />
                             </div>
-                            <div style={{ display: 'flex', gap: 8 }}>
-                                <div style={{ flex: 1 }}>
-                                    <label>Minimum Stock</label>
-                                    <input type="number" min={0} step={1} value={minStock} onChange={e => setMinStock(e.target.value === '' ? '' : Number(e.target.value))} style={{ width: '100%' }} />
-                                </div>
+                            <div>
+                                <label>Minimum Stock</label>
+                                <input type="number" min={0} step={1} value={minStock} onChange={e => setMinStock(e.target.value === '' ? '' : Number(e.target.value))} style={{ width: '100%' }} />
                             </div>
-                            <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
+                            <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                                 <button type="button" onClick={() => setFormOpen(false)}>Cancel</button>
                                 <button type="submit">Save</button>
                             </div>

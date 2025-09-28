@@ -40,24 +40,30 @@ class ExcelExporter {
     // Date style
     this.dateStyle = {
       ...this.dataStyle,
-      numFmt: 'dd-mm-yyyy'
+      numFmt: 'dd/mm/yyyy'
     };
   }
 
   async exportStockStatement(items, summary) {
     const worksheet = this.workbook.addWorksheet('Stock Statement');
 
-    // Add title
+    // Add company name as main heading
     worksheet.mergeCells('A1:L1');
-    worksheet.getCell('A1').value = 'CURRENT STOCK STATEMENT';
-    worksheet.getCell('A1').font = { bold: true, size: 16 };
+    worksheet.getCell('A1').value = 'OM ENGINEERING WORKS';
+    worksheet.getCell('A1').font = { bold: true, size: 18 };
     worksheet.getCell('A1').alignment = { horizontal: 'center' };
 
+    // Add title
+    worksheet.mergeCells('A2:L2');
+    worksheet.getCell('A2').value = 'CURRENT STOCK STATEMENT';
+    worksheet.getCell('A2').font = { bold: true, size: 16 };
+    worksheet.getCell('A2').alignment = { horizontal: 'center' };
+
     // Add summary
-    worksheet.mergeCells('A3:L3');
-    worksheet.getCell('A3').value = `Generated on: ${new Date().toLocaleDateString()} | Total Items: ${summary.totalItems} | Low Stock Items: ${summary.lowStockItems}`;
-    worksheet.getCell('A3').font = { italic: true };
-    worksheet.getCell('A3').alignment = { horizontal: 'center' };
+    worksheet.mergeCells('A4:L4');
+    worksheet.getCell('A4').value = `Generated on: ${new Date().toLocaleDateString()} | Total Items: ${summary.totalItems} | Low Stock Items: ${summary.lowStockItems}`;
+    worksheet.getCell('A4').font = { italic: true };
+    worksheet.getCell('A4').alignment = { horizontal: 'center' };
 
     // Add headers
     const headers = [
@@ -141,17 +147,23 @@ class ExcelExporter {
 
     const { period, inward, outward, itemBreakdown } = monthlyData;
 
-    // Add title
+    // Add company name as main heading
     worksheet.mergeCells('A1:H1');
-    worksheet.getCell('A1').value = `MONTHLY REPORT - ${period.monthName} ${period.year}`;
-    worksheet.getCell('A1').font = { bold: true, size: 16 };
+    worksheet.getCell('A1').value = 'OM ENGINEERING WORKS';
+    worksheet.getCell('A1').font = { bold: true, size: 18 };
     worksheet.getCell('A1').alignment = { horizontal: 'center' };
 
+    // Add title
+    worksheet.mergeCells('A2:H2');
+    worksheet.getCell('A2').value = `MONTHLY REPORT - ${period.monthName} ${period.year}`;
+    worksheet.getCell('A2').font = { bold: true, size: 16 };
+    worksheet.getCell('A2').alignment = { horizontal: 'center' };
+
     // Add summary section
-    worksheet.mergeCells('A3:H3');
-    worksheet.getCell('A3').value = 'SUMMARY';
-    worksheet.getCell('A3').font = { bold: true, size: 14 };
-    worksheet.getCell('A3').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6E6FA' } };
+    worksheet.mergeCells('A4:H4');
+    worksheet.getCell('A4').value = 'SUMMARY';
+    worksheet.getCell('A4').font = { bold: true, size: 14 };
+    worksheet.getCell('A4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E6E6FA' } };
 
     // Inward summary
     worksheet.addRow(['INWARD SUMMARY']);
@@ -214,16 +226,79 @@ class ExcelExporter {
     return this.workbook;
   }
 
+  async exportMonthlyReportWithLogs(monthlyData) {
+    // First sheet: summary + item breakdown
+    await this.exportMonthlyReport(monthlyData);
+
+    const { detailedInward = [], detailedOutward = [] } = monthlyData;
+
+    // Second sheet: Inward Logs
+    const inwardSheet = this.workbook.addWorksheet('Inward Logs');
+    inwardSheet.addRow(['DATE', 'CH.NO', 'SUPPLIER', 'ITEM', 'QTY', 'UNIT', 'RATE', 'AMOUNT', 'REMARKS']);
+    const inwardHeader = inwardSheet.lastRow; inwardHeader.eachCell((c) => { c.style = this.headerStyle; });
+    detailedInward.forEach((t) => {
+      const row = inwardSheet.addRow([
+        t.date,
+        t.challanNo,
+        t.supplier?.name,
+        t.item?.name,
+        t.quantityReceived,
+        t.unit,
+        t.rate,
+        t.totalAmount,
+        t.remarks
+      ]);
+      row.eachCell((cell, col) => {
+        if (col === 1) cell.style = this.dateStyle; else if (col >= 5 && col <= 8) cell.style = this.numberStyle; else cell.style = this.dataStyle;
+      });
+    });
+    inwardSheet.columns.forEach((col) => { col.width = Math.max(col.width || 10, 14); });
+
+    // Third sheet: Outward Logs
+    const outwardSheet = this.workbook.addWorksheet('Outward Logs');
+    outwardSheet.addRow(['DATE', 'CH.NO', 'CUSTOMER', 'ITEM', 'OK QTY', 'CR', 'MR', 'AS CAST', 'TOTAL QTY', 'UNIT', 'RATE', 'AMOUNT', 'REMARKS']);
+    const outwardHeader = outwardSheet.lastRow; outwardHeader.eachCell((c) => { c.style = this.headerStyle; });
+    detailedOutward.forEach((t) => {
+      const row = outwardSheet.addRow([
+        t.date,
+        t.challanNo,
+        t.customer?.name,
+        t.item?.name,
+        t.okQty,
+        t.crQty,
+        t.mrQty,
+        t.asCastQty,
+        t.totalQty,
+        t.unit,
+        t.rate,
+        t.totalAmount,
+        t.remarks
+      ]);
+      row.eachCell((cell, col) => {
+        if (col === 1) cell.style = this.dateStyle; else if (col >= 5 && col <= 12) cell.style = this.numberStyle; else cell.style = this.dataStyle;
+      });
+    });
+    outwardSheet.columns.forEach((col) => { col.width = Math.max(col.width || 10, 14); });
+
+    return this.workbook;
+  }
+
   async exportItemHistory(itemData) {
     const worksheet = this.workbook.addWorksheet('Item History');
 
     const { item, inwardTransactions, outwardTransactions } = itemData;
 
-    // Add title
+    // Add company name as main heading
     worksheet.mergeCells('A1:H1');
-    worksheet.getCell('A1').value = `ITEM HISTORY - ${item.name}`;
-    worksheet.getCell('A1').font = { bold: true, size: 16 };
+    worksheet.getCell('A1').value = 'OM ENGINEERING WORKS';
+    worksheet.getCell('A1').font = { bold: true, size: 18 };
     worksheet.getCell('A1').alignment = { horizontal: 'center' };
+
+    // Add title
+    worksheet.mergeCells('A2:H2');
+    worksheet.getCell('A2').value = `ITEM HISTORY - ${item.name}`;
+    worksheet.getCell('A2').font = { bold: true, size: 16 };
+    worksheet.getCell('A2').alignment = { horizontal: 'center' };
 
     // Add item details
     worksheet.addRow(['Item Details']);
